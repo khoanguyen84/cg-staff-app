@@ -6,6 +6,7 @@ import { yupResolver } from "@hookform/resolvers/yup"
 import * as yup from 'yup'
 import StaffService from "../../services/staffService";
 import { toast } from "react-toastify";
+import useFetchDepartment from "../../hooks/useFetchDepartment";
 
 
 const schema = yup.object({
@@ -17,21 +18,22 @@ const schema = yup.object({
 })
 
 function CreateStaff() {
-    const [departmentList, setDepartmentList] = useState([])
+    // const [departmentList, setDepartmentList] = useState([])
+    // useEffect(() => {
+    //     async function getData() {
+    //         let res = await DepartmentService.getDepartments();
+    //         setDepartmentList(res.data)
+    //     }
+
+    //     getData();
+    // }, [])
+    const departmentList = useFetchDepartment();
+
     const navigate = useNavigate();
 
     const { register, formState: { errors }, handleSubmit, reset } = useForm({
         resolver: yupResolver(schema)
     })
-
-    useEffect(() => {
-        async function getData() {
-            let res = await DepartmentService.getDepartments();
-            setDepartmentList(res.data)
-        }
-
-        getData();
-    }, [])
 
     const handleCreateStaff = async (data) => {
         data = {
