@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import StaffService from "../../services/staffService";
 import { Link } from "react-router-dom";
+import noAvatar from '../../assets/images/noAvatar.jpg'
 
 function StaffList() {
     const [staffList, setStaffList] = useState([])
@@ -33,9 +34,9 @@ function StaffList() {
                     <div className="row">
                         {
                             staffList?.map((staff) => (
-                                <div className="col-sm-3 mb-3">
+                                <div className="col-sm-2 mb-3">
                                     <div className="card">
-                                        <img src={staff.avatar} className="card-img-top" alt="..." />
+                                        <img src={staff.avatar || noAvatar} className="card-img-top avatar-md" alt="..." />
                                     </div>
                                     <div className="card-body">
                                         <h5 className="card-title">{staff.name}</h5>

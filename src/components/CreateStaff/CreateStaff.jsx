@@ -7,6 +7,9 @@ import * as yup from 'yup'
 import StaffService from "../../services/staffService";
 import { toast } from "react-toastify";
 import useFetchDepartment from "../../hooks/useFetchDepartment";
+import noAvatar from '../../assets/images/noAvatar.jpg'
+import FileServive from "../../services/fileService";
+import Helper from "../../helper/helper";
 
 
 const schema = yup.object({
@@ -18,17 +21,31 @@ const schema = yup.object({
 })
 
 function CreateStaff() {
-    // const [departmentList, setDepartmentList] = useState([])
-    // useEffect(() => {
-    //     async function getData() {
-    //         let res = await DepartmentService.getDepartments();
-    //         setDepartmentList(res.data)
-    //     }
+    const [departmentList, setDepartmentList] = useState([])
+    useEffect(() => {
+        async function getData() {
+            let res = await DepartmentService.getDepartments();
+            setDepartmentList(res.data)
+        }
 
-    //     getData();
-    // }, [])
-    const departmentList = useFetchDepartment();
+        getData();
 
+        // cleanup function
+        // return async () => {
+        //     if(uploadedAvatar){
+        //         let filename = Helper.getFilename(uploadedAvatar)
+        //         await FileServive.destroyAvatar(filename)
+        //     }
+        // }
+    }, [])
+    // const departmentList = useFetchDepartment();
+
+    const [selectAvatar, setSelectAvatar] = useState({
+        file: null,
+        fakeUrl: ''
+    })
+    const [uploadedAvatar, setUploadedAvatar] = useState()
+    const [uploading, setUploading] = useState(false);
     const navigate = useNavigate();
 
     const { register, formState: { errors }, handleSubmit, reset } = useForm({
@@ -38,15 +55,36 @@ function CreateStaff() {
     const handleCreateStaff = async (data) => {
         data = {
             ...data,
-            department: JSON.parse(data.department)
+            department: JSON.parse(data.department),
+            avatar: uploadedAvatar || ''
         }
-        
+
+        console.log(data);
         let createRes = await StaffService.createStaff(data);
-        if(createRes && createRes.data){
+        if (createRes && createRes.data) {
             toast.success(`Staff: ${createRes?.data?.name} created success`);
             navigate('/staff/list')
         }
     }
+
+    const handleSelectAvatar = (e) => {
+        const temporaryAvatarUrl = URL.createObjectURL(e.target.files[0])
+        setSelectAvatar({
+            file: e.target.files[0],
+            fakeUrl: temporaryAvatarUrl
+        })
+    }
+
+    const handleUploadAvatar = async () => {
+        setUploading(true);
+        const uploadResult = await FileServive.uploadAvatar(selectAvatar.file);
+        if (uploadResult?.data && Object.keys(uploadResult?.data).length) {
+            setUploadedAvatar(uploadResult?.data.url);
+            toast.info("Avatar uploaded success", {position: "bottom-right", autoClose: 2 * 1000});
+            setUploading(false);
+        }
+    }
+
     return (
         <>
             <section className="staff-list-info">
@@ -66,8 +104,8 @@ function CreateStaff() {
             <section>
                 <div className="container">
                     <div className="row">
-                        <form onSubmit={handleSubmit(handleCreateStaff)}>
-                            <div className="col-sm-6">
+                        <div className="col-sm-6">
+                            <form onSubmit={handleSubmit(handleCreateStaff)}>
                                 <div className="form-group mb-2">
                                     <label className="form-lable">Name</label>
                                     <input type="text" className="form-control" {...register("name")} />
@@ -86,17 +124,13 @@ function CreateStaff() {
                                 <div className="form-group mb-2">
                                     <label className="form-lable me-2">Gender</label>
                                     <div className="form-check form-check-inline">
-                                        <input className="form-check-input" type="radio" value={"male"} defaultChecked={true} {...register('gender')}/>
+                                        <input className="form-check-input" type="radio" value={"male"} defaultChecked={true} {...register('gender')} />
                                         <label className="form-check-label">Male</label>
                                     </div>
                                     <div className="form-check form-check-inline">
-                                        <input className="form-check-input" type="radio" value={'female'} {...register('gender')}/>
+                                        <input className="form-check-input" type="radio" value={'female'} {...register('gender')} />
                                         <label className="form-check-label">Female</label>
                                     </div>
-                                </div>
-                                <div className="form-group mb-2">
-                                    <label className="form-lable">Avatar</label>
-                                    <input type="url" className="form-control" {...register('avatar')} />
                                 </div>
                                 <div className="form-group mb-2">
                                     <label className="form-lable">Department</label>
@@ -111,12 +145,41 @@ function CreateStaff() {
                                 <div className="form-group mb-2">
                                     <button type="submit" className="btn btn-sm btn-danger">Create</button>
                                 </div>
+                            </form>
+                        </div>
+                        <div className="col-md-4">
+                            <div className="card">
+                                <img role="button" src={selectAvatar.fakeUrl || noAvatar} className="card-img-top" alt=""
+                                    onClick={() => document.getElementById('fileUpload').click()}
+                                />
                             </div>
-                        </form>
-
+                            <div className="card-footer">
+                                <input type="file" accept="image/*" className="d-none" id="fileUpload"
+                                    onChange={handleSelectAvatar}
+                                />
+                                <div className="d-grid gap-2">
+                                    {
+                                        uploading ? (
+                                            <button className="btn btn-sm btn-dark" type="button" disabled="">
+                                                <span
+                                                    className="spinner-border spinner-border-sm"
+                                                    role="status"
+                                                    aria-hidden="true"
+                                                />
+                                                Uploading...
+                                            </button>
+                                        ) : (
+                                            <button className="btn btn-sm btn-dark"
+                                                onClick={handleUploadAvatar}
+                                            >Upload</button>
+                                        )
+                                    }
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </section >
         </>
     )
 }
